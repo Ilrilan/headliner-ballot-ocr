@@ -76,7 +76,7 @@ async function rotateFile({ dirPath, fileName }) {
     const cosAlpha = adjacentLength / hipotenuseLength
     const alpha = (Math.acos(cosAlpha) * 180) / Math.PI
     rotationMatrix = cv.getRotationMatrix2D(topLeft, alpha, 1)
-    resultRect = new cv.Rect(topLeft.x, topLeft.y, hipotenuseLength + 50, resultHeight + 50)
+    resultRect = new cv.Rect(topLeft.x, topLeft.y + 90, hipotenuseLength + 60, resultHeight - 180)
   } else {
     const p = {
       x: topLeft.x,
@@ -87,19 +87,22 @@ async function rotateFile({ dirPath, fileName }) {
     const cosAlpha = adjacentLength / hipotenuseLength
     const alpha = (Math.acos(cosAlpha) * -180) / Math.PI
     rotationMatrix = cv.getRotationMatrix2D(topRight, alpha, 1)
-    resultRect = new cv.Rect(topRight.x - hipotenuseLength, topRight.y, hipotenuseLength + 50, resultHeight + 50)
+    resultRect = new cv.Rect(topRight.x - hipotenuseLength, topRight.y + 90, hipotenuseLength + 60, resultHeight - 180)
   }
   const rotatedImg = new cv.Mat()
   cv.warpAffine(grayImg, rotatedImg, rotationMatrix, dsize)
   const croppedImg = rotatedImg.roi(resultRect)
-  const canvas = createCanvas(600, 600)
-  cv.imshow(canvas, croppedImg)
-  writeFileSync(dirPath + '/rotated_' + fileName, canvas.toBuffer('image/png'))
+
+  if (process.env.WRITE_DEBUG_FILES) {
+    const canvas = createCanvas(600, 600)
+    cv.imshow(canvas, croppedImg)
+    writeFileSync(dirPath + '/rotated_' + fileName, canvas.toBuffer('image/png'))
+  }
 
   grayImg.delete()
   edgesImg.delete()
   rotatedImg.delete()
-  croppedImg.delete()
+  return croppedImg
 }
 
 async function rotate({ dirPath, fileNames }) {
@@ -108,7 +111,7 @@ async function rotate({ dirPath, fileNames }) {
   fileNames.forEach((fileName) => {
     rotations.push(rotateFile({ dirPath, fileName }))
   })
-  await Promise.all(rotations)
+  return await Promise.all(rotations)
 
   // we create an object compatible HTMLCanvasElement
   /*const canvas = createCanvas(600, 600)

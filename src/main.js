@@ -6,6 +6,9 @@ const fs = require('fs')
 const os = require('os')
 const { convert } = require('./pdf-to-png')
 const { rotate } = require('./rotate')
+const { calcVotes } = require('./calc-votes')
+
+process.env.WRITE_DEBUG_FILES = true
 
 const pathToUnixPath = os.platform() === 'win32' ? (str) => str.replace(/\\/g, '/') : (str) => str
 
@@ -45,7 +48,10 @@ paths.forEach((pathStr) => {
           return fileNames
         })
         .then((fileNames) => {
-          rotate({ dirPath, fileNames })
+          return rotate({ dirPath, fileNames })
+        })
+        .then((croppedImages) => {
+          return calcVotes({ dirPath, croppedImages })
         })
     )
   }
