@@ -10,7 +10,8 @@ async function convert({ filePath, dirPath }) {
     out_prefix: fileName,
   }
 
-  await pdf.convert(filePath, opts)
+  const fileNames = await pdf.convert(filePath, opts)
+  return fileNames
 }
 
 module.exports = {
