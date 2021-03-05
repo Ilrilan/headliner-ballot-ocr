@@ -32,6 +32,12 @@ const paths = fs.readdirSync(pdfDir)
 
 const convertPromises = []
 
+const getPrintableVotes = (votes) => {
+  return votes.map(
+    (vote) => `Вопрос #${vote.num + 1}: ${vote.kind === 0 ? 'ЗА' : vote.kind === 1 ? 'ПРОТИВ' : 'ВОЗДЕРЖАЛСЯ'}`
+  )
+}
+
 paths.forEach((pathStr) => {
   const filePath = pdfDir + '/' + pathStr
   if (fs.existsSync(filePath) && filePath.indexOf('.pdf') !== -1) {
@@ -52,6 +58,9 @@ paths.forEach((pathStr) => {
         })
         .then((croppedImages) => {
           return calcVotes({ dirPath, croppedImages })
+        })
+        .then((votesResult) => {
+          fs.writeFileSync(dirPath + 'votes.txt', getPrintableVotes(votesResult).join('\n'))
         })
     )
   }

@@ -1,14 +1,27 @@
 const fs = require('fs/promises')
 const { createCanvas } = require('canvas')
 
-const emptyVotePath = '/patterns/squareTopLeft.png'
-
 function getContours(cvImage) {
   const contours = new cv.MatVector()
   const hierarchy = new cv.Mat()
   cv.findContours(cvImage, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
   hierarchy.delete()
   return contours
+}
+
+function mathSort(arr) {
+  return arr.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+}
+
+function getMedianArray(arr, delta = 40) {
+  const res = []
+  res.push(Math.min(...arr))
+  mathSort(arr).forEach((el) => {
+    if (el - res[res.length - 1] >= delta) {
+      res.push(el)
+    }
+  })
+  return res
 }
 
 function findGrayAreas(cvImg) {
@@ -66,19 +79,100 @@ function findGrayAreas(cvImg) {
   blurred.delete()
   thr.delete()
   mask.delete()
+  symbolsMask.delete()
   contoursBlack.delete()
+  contoursWhite.delete()
   return res
+}
+
+function calcVoteResults({ valuedImage, index }) {
+  const thr = new cv.Mat()
+  cv.threshold(valuedImage, thr, 240, 255, cv.THRESH_BINARY)
+  const contours = getContours(thr)
+  const results = []
+  const votes = []
+  const color = new cv.Scalar(128, 128, 128)
+  for (let i = 0; i < contours.size(); ++i) {
+    const cnt = contours.get(i)
+    const rect = cv.boundingRect(cnt)
+    if (rect.width > 40 && rect.height > 40) {
+      const sq = thr.roi(rect)
+      const nonZeroPixelsPercent = cv.countNonZero(sq) / (rect.width * rect.height)
+      const vote = nonZeroPixelsPercent < 0.95
+      if (vote) {
+        cv.rectangle(
+          thr,
+          new cv.Point(rect.x + 2, rect.y + 2),
+          new cv.Point(rect.x + rect.width - 4, rect.y + rect.height - 4),
+          color,
+          -1
+        )
+      }
+      results.push({
+        x: rect.x,
+        y: rect.y,
+        vote,
+      })
+    }
+  }
+  const xArr = []
+  const yArr = []
+  results.forEach((voteField) => {
+    xArr.push(voteField.x)
+    yArr.push(voteField.y)
+  })
+  const medianX = getMedianArray(xArr)
+  const medianY = getMedianArray(yArr)
+  results.forEach((voteField) => {
+    const x = medianX.find((el) => voteField.x - el < 40)
+    const y = medianY.find((el) => voteField.y - el < 40)
+    if (voteField.vote) {
+      votes.push({
+        num: medianY.indexOf(y),
+        kind: medianX.indexOf(x),
+      })
+    }
+    voteField.x = x
+    voteField.y = y * index * 1600
+  })
+  return {
+    cvImg: thr,
+    results,
+    votes,
+  }
 }
 
 async function calcVotes({ dirPath, croppedImages }) {
   const promises = []
+  let votes = []
   croppedImages.forEach((cvImg, index) => {
-    const dilatedImg = findGrayAreas(cvImg)
-    const canvas = createCanvas(600, 600)
-    cv.imshow(canvas, dilatedImg)
-    promises.push(fs.writeFile(dirPath + '/dilated_' + index + '.png', canvas.toBuffer('image/png')))
+    if (index === 0) {
+      cv.rectangle(cvImg, new cv.Point(0, 0), new cv.Point(1000, 1000), new cv.Scalar(0, 0, 0), -1)
+    }
+    const valuedImage = findGrayAreas(cvImg)
+    if (process.env.WRITE_DEBUG_FILES) {
+      const canvas = createCanvas(600, 600)
+      cv.imshow(canvas, valuedImage)
+      promises.push(fs.writeFile(dirPath + '/valuedImage_' + index + '.png', canvas.toBuffer('image/png')))
+    }
+    const calcResult = calcVoteResults({ valuedImage, index })
+    if (process.env.WRITE_DEBUG_FILES) {
+      const canvas = createCanvas(600, 600)
+      cv.imshow(canvas, calcResult.cvImg)
+      promises.push(fs.writeFile(dirPath + '/votesImage_' + index + '.png', canvas.toBuffer('image/png')))
+    }
+    calcResult.cvImg.delete()
+    votes[index] = calcResult.votes
   })
   await Promise.all(promises)
+  let prevVotesCount = 0
+  votes.forEach((votesPage) => {
+    votesPage.forEach((vote) => {
+      vote.num += prevVotesCount
+    })
+    prevVotesCount += votesPage.length
+  })
+  return votes.flat().sort((a, b) => (a.num < b.num ? -1 : a.num > b.num ? 1 : 0))
 }
 
 module.exports = {
