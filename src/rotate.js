@@ -76,7 +76,7 @@ async function rotateFile({ dirPath, fileName }) {
     const cosAlpha = adjacentLength / hipotenuseLength
     const alpha = (Math.acos(cosAlpha) * 180) / Math.PI
     rotationMatrix = cv.getRotationMatrix2D(topLeft, alpha, 1)
-    resultRect = new cv.Rect(topLeft.x, topLeft.y + 90, hipotenuseLength + 60, resultHeight - 180)
+    resultRect = new cv.Rect(topLeft.x - 20, topLeft.y + 90, hipotenuseLength + 100, resultHeight - 180)
   } else {
     const p = {
       x: topLeft.x,
