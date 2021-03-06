@@ -156,6 +156,9 @@ function calcVoteResults({ valuedImage, index }) {
       }
     })
   }
+  votes.forEach((vote) => {
+    delete vote.percent
+  })
   return {
     cvImg: thr,
     results,
