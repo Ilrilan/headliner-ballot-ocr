@@ -123,7 +123,17 @@ function calcVoteResults({ valuedImage, index }) {
     xArr.push(voteField.x)
     yArr.push(voteField.y)
   })
-  const medianX = getMedianArray(xArr)
+  let medianX = getMedianArray(xArr)
+  if (medianX.length === 2) {
+    if (medianX.filter((el) => el < 970).length === 0) {
+      medianX.push(920)
+    } else if (medianX.filter((el) => el > 970 && el < 1100)) {
+      medianX.push(1011)
+    } else {
+      medianX.push(1130)
+    }
+    medianX = mathSort(medianX)
+  }
   const medianY = getMedianArray(yArr)
   results.forEach((voteField) => {
     const x = medianX.find((el) => voteField.x - el < 40)
@@ -136,7 +146,7 @@ function calcVoteResults({ valuedImage, index }) {
       })
     }
     voteField.x = x
-    voteField.y = y * index * 1600
+    voteField.y = y
   })
   votes = votes.filter((vote) => {
     const votesSameNum = votes.filter((v) => v.num === vote.num)
@@ -149,10 +159,19 @@ function calcVoteResults({ valuedImage, index }) {
   if (medianY.length > votes.length) {
     medianY.forEach((el, index) => {
       if (!votes.find((vote) => vote.num === index)) {
-        votes.push({
-          num: index,
-          kind: -1,
-        })
+        const numResults = results.filter((result) => result.y === el)
+        if (numResults.length === 3) {
+          votes.push({
+            num: index,
+            kind: -1,
+          })
+        } else if (numResults.length === 2) {
+          const xCoord = medianX.find((x) => numResults.filter((result) => result.x === x).length === 0)
+          votes.push({
+            num: index,
+            kind: medianX.indexOf(xCoord),
+          })
+        }
       }
     })
   }

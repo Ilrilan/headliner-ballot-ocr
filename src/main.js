@@ -73,6 +73,9 @@ paths.forEach((pathStr) => {
           if (votesResult.length !== 34) {
             errorsLog.push(`Error in file "${pathStr}", counted ${votesResult.length} votes`)
           }
+          if (votesResult.filter((vote) => vote.kind !== -1).length === 0) {
+            errorsLog.push(`Error in file "${pathStr}", no votes!`)
+          }
           fs.writeFileSync(dirPath + 'votes.json', JSON.stringify(votesResult))
           fs.writeFileSync(dirPath + 'votes.txt', getPrintableVotes(votesResult).join('\n'))
         })
