@@ -39,9 +39,14 @@ async function getCvImage(filePath) {
   return dst
 }
 
-function getTemplatePosition(cvImage, cvTemplate) {
+function getTemplatePosition({ cvImage, cvTemplate, dirPath, templateName }) {
   const dst = new cv.Mat()
   cv.matchTemplate(cvImage, cvTemplate, dst, cv.TM_CCORR_NORMED)
+  /*if (process.env.WRITE_DEBUG_FILES) {
+    const canvas = createCanvas(600, 600)
+    cv.imshow(canvas, dst)
+    writeFileSync(dirPath + '/matchTemplate_' + templateName + '.png', canvas.toBuffer('image/png'))
+  }*/
   const result = cv.minMaxLoc(dst)
   dst.delete()
   return result.maxLoc
@@ -56,13 +61,53 @@ async function rotateFile({ dirPath, fileName }) {
   let anchor = new cv.Point(-1, -1)
   cv.dilate(grayImg, edgesImg, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue())
 
+  const color = new cv.Scalar(255, 255, 255)
+
+  const quartX = grayImg.cols / 4
+  const quartY = grayImg.rows / 4
+
+  const topLeftPart = new cv.Mat()
+  grayImg.copyTo(topLeftPart)
+  cv.rectangle(topLeftPart, new cv.Point(quartX, 0), new cv.Point(grayImg.cols, grayImg.rows), color, -1)
+  cv.rectangle(topLeftPart, new cv.Point(0, quartX), new cv.Point(grayImg.cols, grayImg.rows), color, -1)
+
+  const topRightPart = new cv.Mat()
+  grayImg.copyTo(topRightPart)
+  cv.rectangle(topRightPart, new cv.Point(0, 0), new cv.Point(grayImg.cols - quartX, grayImg.rows), color, -1)
+  cv.rectangle(topRightPart, new cv.Point(0, quartY), new cv.Point(grayImg.cols, grayImg.rows), color, -1)
+
+  const bottomLeftPart = new cv.Mat()
+  grayImg.copyTo(bottomLeftPart)
+  cv.rectangle(bottomLeftPart, new cv.Point(quartX, 0), new cv.Point(grayImg.cols, grayImg.rows), color, -1)
+  cv.rectangle(bottomLeftPart, new cv.Point(0, 0), new cv.Point(grayImg.cols, grayImg.rows - quartY), color, -1)
+
+  const bottomRightPart = new cv.Mat()
+  grayImg.copyTo(bottomRightPart)
+  cv.rectangle(bottomRightPart, new cv.Point(0, 0), new cv.Point(grayImg.cols - quartX, grayImg.rows), color, -1)
+  cv.rectangle(bottomRightPart, new cv.Point(0, 0), new cv.Point(grayImg.cols, grayImg.rows - quartY), color, -1)
+
   const positions = {
-    topLeft: getTemplatePosition(grayImg, topLeftImg),
-    topRight: getTemplatePosition(grayImg, topRightImg),
-    bottomLeft: getTemplatePosition(grayImg, bottomLeftImg),
-    bottomRight: getTemplatePosition(grayImg, bottomRightImg),
+    topLeft: getTemplatePosition({ cvImage: topLeftPart, cvTemplate: topLeftImg, dirPath, templateName: 'topLeft' }),
+    topRight: getTemplatePosition({
+      cvImage: topRightPart,
+      cvTemplate: topRightImg,
+      dirPath,
+      templateName: 'topRight',
+    }),
+    bottomLeft: getTemplatePosition({
+      cvImage: bottomLeftPart,
+      cvTemplate: bottomLeftImg,
+      dirPath,
+      templateName: 'bottomLeft',
+    }),
+    bottomRight: getTemplatePosition({
+      cvImage: bottomRightPart,
+      cvTemplate: bottomRightImg,
+      dirPath,
+      templateName: 'bottomRight',
+    }),
   }
-  const { topLeft, topRight, bottomLeft, bottomRight } = positions
+  const { topLeft, topRight, bottomLeft } = positions
   const resultHeight = calcLengthByPoints(topLeft, bottomLeft)
   let rotationMatrix
   let resultRect
