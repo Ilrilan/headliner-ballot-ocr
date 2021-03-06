@@ -35,6 +35,7 @@ function findGrayAreas(cvImg) {
   const thr = new cv.Mat()
   cv.threshold(blurred, thr, 235, 255, cv.THRESH_BINARY)
   const contoursBlack = getContours(thr)
+
   const color = new cv.Scalar(255, 255, 255)
   const mask = cv.Mat.zeros(cvImg.rows, cvImg.cols, cvImg.type())
   for (let i = 0; i < contoursBlack.size(); ++i) {
@@ -98,7 +99,7 @@ function calcVoteResults({ valuedImage, index }) {
     if (rect.width > 40 && rect.height > 40) {
       const sq = thr.roi(rect)
       const nonZeroPixelsPercent = cv.countNonZero(sq) / (rect.width * rect.height)
-      const vote = nonZeroPixelsPercent < 0.95
+      const vote = nonZeroPixelsPercent < 0.96
       if (vote) {
         cv.rectangle(
           thr,
@@ -147,7 +148,9 @@ async function calcVotes({ dirPath, croppedImages }) {
   let votes = []
   croppedImages.forEach((cvImg, index) => {
     if (index === 0) {
-      cv.rectangle(cvImg, new cv.Point(0, 0), new cv.Point(1400, 1200), new cv.Scalar(0, 0, 0), -1)
+      cv.rectangle(cvImg, new cv.Point(0, 0), new cv.Point(1400, 1300), new cv.Scalar(0, 0, 0), -1)
+    } else {
+      cv.rectangle(cvImg, new cv.Point(0, 0), new cv.Point(850, 1650), new cv.Scalar(0, 0, 0), -1)
     }
     const valuedImage = findGrayAreas(cvImg)
     if (process.env.WRITE_DEBUG_FILES) {
