@@ -8,6 +8,8 @@ const { convert } = require('./pdf-to-png')
 const { rotate } = require('./rotate')
 const { calcVotes } = require('./calc-votes')
 
+const errorsLog = []
+
 process.env.WRITE_DEBUG_FILES = true
 
 const pathToUnixPath = os.platform() === 'win32' ? (str) => str.replace(/\\/g, '/') : (str) => str
@@ -68,6 +70,9 @@ paths.forEach((pathStr) => {
           return calcVotes({ dirPath, croppedImages })
         })
         .then((votesResult) => {
+          if (votesResult.length !== 34) {
+            errorsLog.push(`Error in file "${pathStr}", counted ${votesResult.length} votes`)
+          }
           fs.writeFileSync(dirPath + 'votes.json', JSON.stringify(votesResult))
           fs.writeFileSync(dirPath + 'votes.txt', getPrintableVotes(votesResult).join('\n'))
         })
@@ -77,4 +82,5 @@ paths.forEach((pathStr) => {
 
 Promise.all(convertPromises).then(() => {
   console.log('all done')
+  console.log(errorsLog.length === 0 ? 'no errors' : errorsLog.join('\n'))
 })
