@@ -91,7 +91,7 @@ function calcVoteResults({ valuedImage, index }) {
   cv.threshold(valuedImage, thr, 240, 255, cv.THRESH_BINARY)
   const contours = getContours(thr)
   const results = []
-  const votes = []
+  let votes = []
   const color = new cv.Scalar(128, 128, 128)
   for (let i = 0; i < contours.size(); ++i) {
     const cnt = contours.get(i)
@@ -113,6 +113,7 @@ function calcVoteResults({ valuedImage, index }) {
         x: rect.x,
         y: rect.y,
         vote,
+        percent: nonZeroPixelsPercent,
       })
     }
   }
@@ -131,10 +132,19 @@ function calcVoteResults({ valuedImage, index }) {
       votes.push({
         num: medianY.indexOf(y),
         kind: medianX.indexOf(x),
+        percent: voteField.percent,
       })
     }
     voteField.x = x
     voteField.y = y * index * 1600
+  })
+  votes = votes.filter((vote) => {
+    const votesSameNum = votes.filter((v) => v.num === vote.num)
+    if (votesSameNum.length === 1) {
+      return true
+    }
+    const minPercent = Math.min(...votesSameNum.map((vote) => vote.percent))
+    return vote.percent === minPercent
   })
   if (medianY.length > votes.length) {
     medianY.forEach((el, index) => {
