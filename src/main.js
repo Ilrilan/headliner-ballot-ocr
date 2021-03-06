@@ -33,9 +33,17 @@ const paths = fs.readdirSync(pdfDir)
 const convertPromises = []
 
 const getPrintableVotes = (votes) => {
-  return votes.map(
-    (vote) => `Вопрос #${vote.num + 1}: ${vote.kind === 0 ? 'ЗА' : vote.kind === 1 ? 'ПРОТИВ' : 'ВОЗДЕРЖАЛСЯ'}`
-  )
+  return votes.map((vote) => {
+    let textKind = 'НЕ ПРИНЯЛ УЧАСТИЯ ПО ВОПРОСУ'
+    if (vote.kind === 0) {
+      textKind = 'ЗА'
+    } else if (vote.kind === 1) {
+      textKind = 'ПРОТИВ'
+    } else if (vote.kind === 2) {
+      textKind = 'ВОЗДЕРЖАЛСЯ'
+    }
+    return `Вопрос #${vote.num + 1}: ${textKind}`
+  })
 }
 
 paths.forEach((pathStr) => {

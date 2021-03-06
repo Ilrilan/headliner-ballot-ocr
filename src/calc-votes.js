@@ -136,6 +136,16 @@ function calcVoteResults({ valuedImage, index }) {
     voteField.x = x
     voteField.y = y * index * 1600
   })
+  if (medianY.length > votes.length) {
+    medianY.forEach((el, index) => {
+      if (!votes.find((vote) => vote.num === index)) {
+        votes.push({
+          num: index,
+          kind: -1,
+        })
+      }
+    })
+  }
   return {
     cvImg: thr,
     results,
