@@ -60,6 +60,7 @@ paths.forEach((pathStr) => {
           return calcVotes({ dirPath, croppedImages })
         })
         .then((votesResult) => {
+          fs.writeFileSync(dirPath + 'votes.json', JSON.stringify(votesResult))
           fs.writeFileSync(dirPath + 'votes.txt', getPrintableVotes(votesResult).join('\n'))
         })
     )

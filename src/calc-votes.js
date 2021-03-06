@@ -147,7 +147,7 @@ async function calcVotes({ dirPath, croppedImages }) {
   let votes = []
   croppedImages.forEach((cvImg, index) => {
     if (index === 0) {
-      cv.rectangle(cvImg, new cv.Point(0, 0), new cv.Point(1000, 1000), new cv.Scalar(0, 0, 0), -1)
+      cv.rectangle(cvImg, new cv.Point(0, 0), new cv.Point(1400, 1200), new cv.Scalar(0, 0, 0), -1)
     }
     const valuedImage = findGrayAreas(cvImg)
     if (process.env.WRITE_DEBUG_FILES) {
