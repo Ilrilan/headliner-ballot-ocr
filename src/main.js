@@ -34,18 +34,25 @@ const paths = fs.readdirSync(pdfDir)
 
 const convertPromises = []
 
+const KindCodes = {
+  0: 'ЗА',
+  1: 'ПРОТИВ',
+  2: 'ВОЗДЕРЖАЛСЯ',
+}
+KindCodes[-1] = 'ИГНОРИРОВАЛ'
+
 const getPrintableVotes = (votes) => {
   return votes.map((vote) => {
-    let textKind = 'НЕ ПРИНЯЛ УЧАСТИЯ ПО ВОПРОСУ'
-    if (vote.kind === 0) {
-      textKind = 'ЗА'
-    } else if (vote.kind === 1) {
-      textKind = 'ПРОТИВ'
-    } else if (vote.kind === 2) {
-      textKind = 'ВОЗДЕРЖАЛСЯ'
-    }
-    return `Вопрос #${vote.num + 1}: ${textKind}`
+    return `Вопрос #${vote.num + 1}: ${KindCodes[vote.kind]}`
   })
+}
+
+const getJSONVotes = (votes) => {
+  const result = {}
+  votes.forEach((vote) => {
+    result[vote.num + 1] = vote.kind
+  })
+  return result
 }
 
 paths.forEach((pathStr) => {
@@ -76,7 +83,7 @@ paths.forEach((pathStr) => {
           if (votesResult.filter((vote) => vote.kind !== -1).length === 0) {
             errorsLog.push(`Error in file "${pathStr}", no votes!`)
           }
-          fs.writeFileSync(dirPath + 'votes.json', JSON.stringify(votesResult))
+          fs.writeFileSync(dirPath + 'votes.json', JSON.stringify(getJSONVotes(votesResult), undefined, 2))
           fs.writeFileSync(dirPath + 'votes.txt', getPrintableVotes(votesResult).join('\n'))
         })
     )
