@@ -40,6 +40,7 @@ const KindCodes = {
   2: 'ВОЗДЕРЖАЛСЯ',
 }
 KindCodes[-1] = 'ИГНОРИРОВАЛ'
+KindCodes[-2] = 'ОШИБКА РАСПОЗНАВАНИЯ'
 
 const getPrintableVotes = (votes) => {
   return votes.map((vote) => {
@@ -77,6 +78,10 @@ paths.forEach((pathStr) => {
           return calcVotes({ dirPath, croppedImages })
         })
         .then((votesResult) => {
+          recErrors = votesResult.filter((v) => v.kind === -2)
+          if (recErrors.length > 0) {
+            errorsLog.push(`Recognition errors in file "${pathStr}", votes: ${recErrors.map((v) => v.num).join(',')}`)
+          }
           if (votesResult.length !== 34) {
             errorsLog.push(`Error in file "${pathStr}", counted ${votesResult.length} votes`)
           }

@@ -153,6 +153,12 @@ function calcVoteResults({ valuedImage, index }) {
     if (votesSameNum.length === 1) {
       return true
     }
+    const votesLessThan90 = votesSameNum.filter((v) => v.percent < 0.93)
+    if (votesLessThan90.length > 1) {
+      votesLessThan90.forEach((v) => {
+        v.kind = -2
+      })
+    }
     const minPercent = Math.min(...votesSameNum.map((vote) => vote.percent))
     return vote.percent === minPercent
   })
