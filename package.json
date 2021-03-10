@@ -6,7 +6,8 @@
   "author": "Mikhail Shilov <ext.mshilov@tinkoff.ru>",
   "license": "MIT",
   "scripts": {
-    "convert": "node src/main.js"
+    "convert": "node src/main.js",
+    "report": "node src/reporter.js"
   },
   "dependencies": {
     "pdf-poppler": "^0.2.1",

@@ -2,3 +2,5 @@ node_modules
 .idea
 pdf
 yarn-error.log
+reports
+report.txt

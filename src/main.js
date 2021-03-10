@@ -30,6 +30,7 @@ function installDOM() {
 installDOM()
 
 const pdfDir = currentPath + '/pdf'
+const reportDir = currentPath + '/reports'
 const paths = fs.readdirSync(pdfDir)
 
 const convertPromises = []
@@ -56,9 +57,30 @@ const getJSONVotes = (votes) => {
   return result
 }
 
+const getAttrByPdfName = (pdfName) => {
+  const result = {}
+  let keys = []
+  if (pdfName.indexOf('_') !== -1) {
+    keys = pdfName.split('_')
+  } else {
+    keys = [pdfName]
+  }
+  keys.forEach((key) => {
+    if (key[0] === 'm') {
+      result.vault = key.slice(1)
+    } else if (key[0] === 'v') {
+      result.parking = key.slice(1)
+    } else {
+      result.flat = key
+    }
+  })
+  return result
+}
+
 paths.forEach((pathStr) => {
   const filePath = pdfDir + '/' + pathStr
   if (fs.existsSync(filePath) && filePath.indexOf('.pdf') !== -1) {
+    const fileName = pathStr.replace('.pdf', '')
     const dirPath = filePath.replace('.pdf', '') + '/'
     if (fs.existsSync(dirPath)) {
       fs.rmdirSync(dirPath, { recursive: true })
@@ -88,7 +110,12 @@ paths.forEach((pathStr) => {
           if (votesResult.filter((vote) => vote.kind !== -1).length === 0) {
             errorsLog.push(`Error in file "${pathStr}", no votes!`)
           }
-          fs.writeFileSync(dirPath + 'votes.json', JSON.stringify(getJSONVotes(votesResult), undefined, 2))
+          const fileReport = {
+            votes: getJSONVotes(votesResult),
+            attrs: getAttrByPdfName(fileName),
+          }
+          fs.writeFileSync(dirPath + fileName + '_votes.json', JSON.stringify(fileReport, undefined, 2))
+          fs.writeFileSync(reportDir + '/' + fileName + '_votes.json', JSON.stringify(fileReport, undefined, 2))
           fs.writeFileSync(dirPath + 'votes.txt', getPrintableVotes(votesResult).join('\n'))
         })
     )
